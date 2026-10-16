@@ -1,8 +1,8 @@
 frontend:
-  image: ghcr.io/smitrupani/logitrack-frontend
+  image: ghcr.io/pujan24bcs10138/logitrack-frontend
   tag: latest
 backend:
-  image: ghcr.io/smitrupani/logitrack-backend
+  image: ghcr.io/pujan24bcs10138/logitrack-backend
   tag: latest
 
 replicaCount: 2
