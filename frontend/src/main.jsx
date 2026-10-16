@@ -276,9 +276,9 @@ function App() {
           </div>
 
           <div className="profile">
-            <div className="avatar">SR</div>
+            <div className="avatar">PK</div>
             <div>
-              <b>Smit Rupani</b>
+              <b>Pujan Khunt</b>
               <small>DevOps Engineer</small>
             </div>
           </div>
@@ -748,7 +748,7 @@ function App() {
                     <tr>
                       <td>Just now</td>
                       <td><b>RESTOCK_OPERATION</b></td>
-                      <td>Smit Rupani</td>
+                      <td>Pujan Khunt</td>
                       <td><span className="sku-badge">SKU-ELEC-001</span></td>
                       <td>172.18.0.1 (Docker Nginx)</td>
                       <td><span className="status-pill in_stock">Success</span></td>
