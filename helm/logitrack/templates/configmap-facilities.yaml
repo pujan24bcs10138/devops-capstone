@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logitrack.fullname" . }}-facilities
+  labels:
+    app: logitrack
+
+data:
+  facilities.json: |
+    [
+      {
+        "id": "mum-central",
+        "name": "Central Hub — Mumbai A1",
+        "region": "ap-south-1 (Primary AWS Region)",
+        "location": "Western Express, Mumbai",
+        "aisles": "Aisles 1–12",
+        "status": "Operational",
+        "storage_utilization": 78,
+        "dispatch_sla": "99.8%",
+        "provisioner": "Terraform AWS VPC Module v5.8.1",
+        "cluster_name": "logitrack-eks-ap-south-1"
+      },
+      {
+        "id": "blr-node",
+        "name": "Fulfillment Node — Bangalore B2",
+        "region": "ap-south-1 (Secondary Tech Hub)",
+        "location": "Electronic City, Bangalore",
+        "aisles": "Aisles 13–24",
+        "status": "Operational",
+        "storage_utilization": 62,
+        "dispatch_sla": "99.4%",
+        "provisioner": "Terraform AWS VPC Module v5.8.1",
+        "cluster_name": "logitrack-eks-ap-south-1"
+      },
+      {
+        "id": "pun-overflow",
+        "name": "Overflow Facility — Pune C1",
+        "region": "ap-south-1 (Heavy Cargo Zone)",
+        "location": "Chakan MIDC, Pune",
+        "aisles": "Zones A–D",
+        "status": "Operational",
+        "storage_utilization": 45,
+        "dispatch_sla": "98.9%",
+        "provisioner": "Terraform AWS VPC Module v5.8.1",
+        "cluster_name": "logitrack-eks-ap-south-1"
+      }
+    ]

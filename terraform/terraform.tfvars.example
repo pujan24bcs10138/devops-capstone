@@ -1,0 +1,6 @@
+# Example Terraform variables for LogiTrack infrastructure
+# Copy to terraform.tfvars and customize if needed. Do NOT commit secrets.
+
+aws_region   = "ap-south-1"
+cluster_name = "logitrack-eks"
+environment  = "dev"

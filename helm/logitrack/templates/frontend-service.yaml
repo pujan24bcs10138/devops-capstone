@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "logitrack.fullname" . }}-frontend
+  labels:
+    app: logitrack-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: logitrack-frontend
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http

@@ -1,0 +1,33 @@
+frontend:
+  image: ghcr.io/smitrupani/logitrack-frontend
+  tag: latest
+backend:
+  image: ghcr.io/smitrupani/logitrack-backend
+  tag: latest
+
+replicaCount: 2
+namespace: logitrack
+imagePullSecrets: []
+postgres:
+  host: logitrack-postgres
+  database: logitrack
+  username: logitrack
+  password: logitrack
+ingress:
+  enabled: true
+  host: logitrack.local
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+monitoring:
+  serviceMonitor:
+    enabled: true

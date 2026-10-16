@@ -1,0 +1,133 @@
+name: LogiTrack CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test:
+    name: Run Automated Tests & Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+        working-directory: backend
+
+      - name: Run Pytest test suite
+        run: pytest -v
+        working-directory: backend
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Build React frontend
+        run: npm install && npm run build
+        working-directory: frontend
+
+  build-scan-push:
+    name: Build, Security Scan & Push Docker Images
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set lowercase repository owner
+        run: |
+          echo "OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker images with Git SHA tag
+        run: |
+          docker build -t ghcr.io/${{ env.OWNER_LC }}/logitrack-backend:${{ github.sha }} ./backend
+          docker build -t ghcr.io/${{ env.OWNER_LC }}/logitrack-frontend:${{ github.sha }} ./frontend
+
+      - name: Trivy vulnerability scan (Backend)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ env.OWNER_LC }}/logitrack-backend:${{ github.sha }}
+          format: 'table'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Trivy vulnerability scan (Frontend)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ env.OWNER_LC }}/logitrack-frontend:${{ github.sha }}
+          format: 'table'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Push Docker images to GHCR
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker push ghcr.io/${{ env.OWNER_LC }}/logitrack-backend:${{ github.sha }}
+          docker push ghcr.io/${{ env.OWNER_LC }}/logitrack-frontend:${{ github.sha }}
+
+  deploy:
+    name: Deploy to Kubernetes via Helm
+    if: github.ref == 'refs/heads/main'
+    needs: build-scan-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set lowercase repository owner
+        run: |
+          echo "OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure kubectl
+        if: env.KUBE_CONFIG_DATA != ''
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBE_CONFIG_DATA" | base64 -d > ~/.kube/config
+
+      - name: Deploy with Helm
+        if: env.KUBE_CONFIG_DATA != ''
+        continue-on-error: true
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          helm upgrade --install logitrack ./helm/logitrack -n logitrack --create-namespace \
+            --set backend.tag=${{ github.sha }} \
+            --set frontend.tag=${{ github.sha }} \
+            --set backend.image=ghcr.io/${{ env.OWNER_LC }}/logitrack-backend \
+            --set frontend.image=ghcr.io/${{ env.OWNER_LC }}/logitrack-frontend
